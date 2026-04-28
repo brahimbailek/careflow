@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_DB: careflow_db
+      POSTGRES_USER: careflow_user
+      POSTGRES_PASSWORD: secure_password
+
+  backend:
+    build: .
+    command: bash -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0"
+    volumes:
+      - .:/app
+      - ./migrations:/app/migrations
+    env_file:
+      - .env
+    ports:
+      - 8000:8000
+    networks:
+      - careflow_network
+
+  frontend:
+    build:
+      dockerfile: Dockerfile.frontend
+      context: .
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - careflow_network
+      
+networks:
+  careflow_network:
